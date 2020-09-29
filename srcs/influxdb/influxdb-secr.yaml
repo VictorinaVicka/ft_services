@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: influxdb-secr
+  labels:
+    app: influxdb
+type: Opaque
+stringData:
+  INFLUXDB_CONFIG_PATH: /etc/influxdb/influxdb.conf
+  INFLUXDB_ADMIN_USER: tfarenga
+  INFLUXDB_ADMIN_PASSWORD: tfarenga
+  INFLUXDB_DB: telegraf
+  INFLUXDB_USER: tfarenga
+  INFLUXDB_USER_PASSWORD: tfarenga

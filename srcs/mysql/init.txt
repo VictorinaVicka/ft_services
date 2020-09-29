@@ -1,0 +1,5 @@
+FLUSH PRIVILEGES;
+CREATE DATABASE wordpress;
+CREATE USER 'tfarenga'@'%' IDENTIFIED BY 'pass';
+GRANT ALL PRIVILEGES ON wordpress.* TO 'tfarenga'@'%';
+FLUSH PRIVILEGES;
