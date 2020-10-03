@@ -1,15 +1,16 @@
-FROM 	alpine:latest
+FROM alpine:latest
 
-ARG		IP
-RUN 	apk update
-RUN 	apk add php7 php7-fpm php7-opcache php7-gd php7-mysqli php7-zlib\
-			php7-curl php7-mbstring php7-json php7-session
-ADD		https://wordpress.org/latest.tar.gz /etc/
-RUN		tar -xvf /etc/latest.tar.gz -C /etc > /dev/null && rm -f /etc/latest.tar.gz > /dev/null
-COPY	./wp-config.php /etc/wordpress/
-COPY 	./start.sh /tmp/start.sh
-RUN 	chmod +x /tmp/start.sh
-RUN		sed -i "s/AAAIPAAA/${IP}/g" /etc/wordpress/wp-config.php
+RUN		apk add nginx openrc supervisor \
+vim php7 php7-fpm php7-json php7-mysqli mysql mysql-client wget \
+&& rm /etc/nginx/conf.d/default.conf && rc-update add php-fpm7 default
 
-EXPOSE 5050
-ENTRYPOINT	[ "/tmp/start.sh"]
+RUN		wget https://wordpress.org/latest.tar.gz \
+&& tar -xf latest.tar.gz && rm -rf latest.tar.gz && mv wordpress /var/www/wordpress && chmod 777 /var/www/* && chmod 777 /var/www/wordpress/* \
+&& mkdir -p /run/nginx && mkdir -p /run/php
+
+COPY	src/nginx.conf /etc/nginx/conf.d/
+COPY	src/supervisord.conf	/etc/supervisord.conf
+COPY	src/wp-config.php /var/www/wordpress
+
+EXPOSE 	5050
+CMD		["usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

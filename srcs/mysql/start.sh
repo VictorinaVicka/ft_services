@@ -1,9 +1,10 @@
-#!/bin/sh
-
-/usr/bin/mysql_install_db --user=root --datadir="/var/lib/mysql" > /dev/null
-/usr/bin/mysqld --user=root --bootstrap --verbose=0 < /tmp/init.txt
 rc default
+/etc/init.d/mariadb setup
 rc-service mariadb start
-mysql -u root wordpress < /tmp/wordpress.sql
+
+echo "create database wordpress;" | mysql
+echo "grant all on *.* to admin@'%' identified by 'admin' with grant option; flush privileges;" | mysql
+mysql wordpress < wordpress.sql
+
 rc-service mariadb stop
-/usr/bin/mysqld_safe --datadir="/var/lib/mysql"
+/usr/bin/mysqld_safe

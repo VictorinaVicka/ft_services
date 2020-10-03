@@ -1,16 +1,12 @@
-FROM alpine:latest
+FROM	alpine:3.7
 
-WORKDIR /srcs
-RUN apk update && apk upgrade
-RUN apk add --no-cache openssl vsftpd
+RUN		apk update && apk add openssl vsftpd openrc
 
-COPY ./vsftpd.conf /etc/vcftpd/vsftpd.conf
-COPY ./start.sh /tmp/
+RUN 	openssl req -newkey rsa:2048 -x509 -sha256 -days 30 -nodes -out /etc/vsftpd/vsftpd.pem \
+	-keyout /etc/vsftpd/vsftpd.pem -subj "/C=RU/ST=Msc/L=Msc/O=21 School/OU=tfarenga/CN=tfarenga" && echo 'root:root' | chpasswd \
+&& mkdir -p /var/log/ftp && touch /var/log/ftp/xferlog && rc default
 
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/ftps.key -out /etc/ssl/certs/ftps.crt -subj "/C=RU/ST=Moscow/O=21school/CN=tfarenga"
-
-RUN echo "tfarenga\tfarenga" | chpasswd
-
-EXPOSE 20 21 2020 2021
-VOLUME [ "var/lib/ftp" ]
-ENTRYPOINT [ "/tmp/start.sh" ]
+VOLUME	["sys/fs/cgroup"]
+EXPOSE 	21
+COPY	src/vsftpd.conf		/etc/vsftpd/vsftpd.conf
+ENTRYPOINT	vsftpd /etc/vsftpd/vsftpd.conf

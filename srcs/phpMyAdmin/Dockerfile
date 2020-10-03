@@ -1,14 +1,18 @@
-FROM 	alpine:latest
+FROM alpine:latest
 
-RUN 	apk update
-RUN 	apk add php7 php7-fpm php7-opcache php7-gd php7-mysqli php7-zlib\
-			php7-curl php7-mbstring php7-json php7-session
-ADD		https://files.phpmyadmin.net/phpMyAdmin/5.0.2/phpMyAdmin-5.0.2-all-languages.tar.gz /etc/
-RUN		tar -xvf /etc/phpMyAdmin-5.0.2-all-languages.tar.gz -C /etc/. && rm -f /etc/phpMyAdmin-5.0.2-all-languages.tar.gz && \
-		mv /etc/phpMyAdmin-5.0.2-all-languages /etc/phpmyadmin
-COPY 	./start.sh /tmp/start.sh
-RUN 	chmod +x /tmp/start.sh
-COPY 	./config.inc.php /etc/phpmyadmin/config.inc.php
+RUN apk add vim openrc openssl supervisor nginx  \
+php7 php7-fpm php7-iconv php7-json php7-mbstring php7-mysqli php7-phar php7-session && rc-update add php-fpm7 default
+
+COPY /src/nginx.conf /src/supervisord.conf /src/config.inc.php /
+
+RUN wget -c https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-english.tar.xz && mkdir -p /var/www/phpmyadmin /var/www/phpmyadmin/tmp \
+&& chmod 777 /var/www/phpmyadmin/tmp && tar -xvf phpMyAdmin-latest-english.tar.xz --strip-components 1 -C /var/www/phpmyadmin
+
+
+
+RUN rm -f /etc/nginx/conf.d/default.conf && mv /nginx.conf /etc/nginx/conf.d/ &&  \
+mv /config.inc.php /var/www/phpmyadmin/ && mv /supervisord.conf /etc/supervisord.conf && mkdir /run/nginx /var/run/php
 
 EXPOSE 5000
-ENTRYPOINT ["/tmp/start.sh"]
+
+CMD	["usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

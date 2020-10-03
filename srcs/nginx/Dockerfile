@@ -1,26 +1,17 @@
-FROM alpine:latest
+FROM 	alpine:latest
 
-RUN apk update && apk upgrade
-RUN apk add nginx openssl openssh supervisor
-RUN apk add openrc
+COPY 	./src/nginx.conf ./src/index.html ./src/supervisord.conf ./
+RUN apk add openrc openssl openssh nginx vim bash sudo supervisor
 
-ARG			IP
-VOLUME		[ "/sys/fs/cgroup" ]
-RUN			mkdir -p /run/nginx
-RUN			rm -f /etc/nginx/conf.d/*.conf
-COPY		./nginx.conf /etc/nginx/conf.d/default.conf
+RUN 	openssl req -newkey rsa:2048 -x509 -sha256 -days 30 -nodes -out /etc/ssl/private/tfarenga.crt \
+	-keyout /etc/ssl/private/tfarenga.key -subj "/C=RU/ST=Msc/L=Msc/O=21 School/OU=tfarenga/CN=tfarenga"
 
-RUN openssl req -newkey rsa:2048 -x509 -sha256 -days 30 -nodes -out /etc/ssl/private/tfarenga.crt \
-	-keyout /etc/ssl/private/tfarenga.key -subj "/C=RU/ST=Moscow/L=Moscow/O=21 School/OU=tfarenga/CN=tfarenga"
+RUN 	adduser -D tfarenga && echo 'tfarenga:123' | chpasswd && addgroup tfarenga wheel && echo '%wheel ALL=(ALL) ALL' > /etc/sudoers.d/wheel \
+&& /usr/bin/ssh-keygen -A
 
-RUN			sed -i "s/aaaipaaa/${IP}/g" /etc/nginx/conf.d/default.conf
-RUN			echo "daemon off;" >> /etc/nginx/nginx.conf
+RUN 	rm /etc/nginx/conf.d/default.conf && mv /nginx.conf /etc/nginx/conf.d/ \
+&& mv /index.html /var/www/ \
+&& mkdir /run/nginx /var/run/sshd && mv /supervisord.conf /etc/supervisord.conf
 
-COPY		./supervisor.conf /etc/supervisord.conf
-RUN			chmod +rw /etc/supervisord.conf
-RUN			echo -e "tfarenga\ntfarenga" | adduser ssh_peer
-COPY		./start.sh /tmp/start.sh
-RUN			chmod u+x /tmp/start.sh
-
-EXPOSE		443 80 22
-ENTRYPOINT	["/tmp/start.sh"]
+EXPOSE 	22 80 443
+CMD		["usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
